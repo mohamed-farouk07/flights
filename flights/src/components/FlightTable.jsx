@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -9,12 +9,12 @@ import {
   Paper,
   Typography,
   TablePagination,
-  IconButton,
+  Button,
+  Box, // Import Button
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
-import { fetchFlights } from "../services/flightService";
-import ImageIcon from "@mui/icons-material/Image";
-import NoImageIcon from "@mui/icons-material/Block";
+import { fetchFlights } from "../services/FlightService";
+import FlightModal from "./FlightForm";
 
 const FlightsTable = () => {
   const location = useLocation();
@@ -25,14 +25,19 @@ const FlightsTable = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false); // Modal state
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const pageParam = parseInt(queryParams.get("page"), 10);
     const sizeParam = parseInt(queryParams.get("size"), 10);
 
-    const defaultPage = !isNaN(pageParam) && pageParam > 0 && pageParam <= 100 ? pageParam - 1 : 0;
-    const defaultSize = !isNaN(sizeParam) && sizeParam > 0 && sizeParam <= 100 ? sizeParam : 10;
+    const defaultPage =
+      !isNaN(pageParam) && pageParam > 0 && pageParam <= 100
+        ? pageParam - 1
+        : 0;
+    const defaultSize =
+      !isNaN(sizeParam) && sizeParam > 0 && sizeParam <= 100 ? sizeParam : 10;
 
     setPage(defaultPage);
     setRowsPerPage(defaultSize);
@@ -77,12 +82,32 @@ const FlightsTable = () => {
     });
   };
 
+  const handleOpenModal = () => {
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+  };
+
   if (loading) {
     return <Typography>Loading flights...</Typography>;
   }
 
   return (
     <Paper>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        padding="16px"
+      >
+        <Typography variant="h4">Flight Information</Typography>
+        <Button variant="contained" color="primary" onClick={handleOpenModal}>
+          Add Flight
+        </Button>
+      </Box>
+      <FlightModal open={modalOpen} onClose={handleCloseModal} />
       <TableContainer>
         <Table>
           <TableHead>
@@ -90,7 +115,6 @@ const FlightsTable = () => {
               <TableCell>Code</TableCell>
               <TableCell>Capacity</TableCell>
               <TableCell>Departure Date</TableCell>
-              <TableCell>Image Preview</TableCell> {/* Add Image Preview Column */}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -99,23 +123,14 @@ const FlightsTable = () => {
                 <TableRow key={flight.id}>
                   <TableCell>{flight.code}</TableCell>
                   <TableCell>{flight.capacity}</TableCell>
-                  <TableCell>{new Date(flight.departureDate).toLocaleString()}</TableCell>
                   <TableCell>
-                    {flight.img ? (
-                      <IconButton onClick={() => window.open(flight.img, '_blank')}>
-                        <ImageIcon />
-                      </IconButton>
-                    ) : (
-                      <IconButton disabled>
-                        <NoImageIcon />
-                      </IconButton>
-                    )}
+                    {new Date(flight.departureDate).toLocaleString()}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4}>No flights available.</TableCell>
+                <TableCell colSpan={3}>No flights available.</TableCell>
               </TableRow>
             )}
           </TableBody>
