@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
 import {
   Dialog,
   DialogTitle,
@@ -6,35 +7,44 @@ import {
   TextField,
   DialogActions,
   Button,
+  Typography,
 } from "@mui/material";
-import { useForm, Controller } from "react-hook-form";
+import { createFlight } from "../services/CreateFlight";
 
-const FlightModal = ({ open, onClose, onSubmit }) => {
-  const { control, handleSubmit, reset } = useForm({
-    defaultValues: {
-      code: "",
-      capacity: "",
-      departureDate: "",
-    },
-  });
+const FlightModal = ({ open, onClose }) => {
+  const { register, handleSubmit, reset } = useForm();
+  const [error, setError] = useState(null);
 
-  const handleFormSubmit = (data) => {
-    onSubmit(data);
-    reset(); // Reset form fields after submission
-    onClose(); // Close the modal after submission
+  const onSubmit = async (data) => {
+    setError(null); // Reset any previous errors
+
+    try {
+      // Ensure the departure date is properly formatted as an ISO string
+      const flightData = {
+        code: data.code,
+        capacity: parseInt(data.capacity, 10), // Ensure capacity is a number
+        departureDate: new Date(data.departureDate).toISOString().split("T")[0], // Convert to YYYY-MM-DD format
+      };
+
+      await createFlight(flightData);
+      reset(); // Reset form after successful submission
+      onClose(); // Close the modal
+
+      // Refresh the page
+      window.location.reload();
+    } catch (error) {
+      setError(error.message); // Set the error message to display
+    }
   };
 
   return (
     <Dialog
-      fullWidth
       open={open}
       onClose={(event, reason) => {
         if (reason !== "backdropClick") {
           onClose();
         }
       }}
-      disableEscapeKeyDown
-      BackdropProps={{ style: { pointerEvents: "none" } }}
       PaperProps={{
         style: {
           width: "80vw", // Full width of the viewport
@@ -43,52 +53,49 @@ const FlightModal = ({ open, onClose, onSubmit }) => {
           maxHeight: "none", // Remove max-height to ensure full height
         },
       }}
+      disableEscapeKeyDown
     >
       <DialogTitle>Add Flight Details</DialogTitle>
       <DialogContent>
-        <Controller
-          name="code"
-          control={control}
-          render={({ field }) => (
-            <TextField {...field} label="Code" fullWidth margin="normal" />
-          )}
-        />
-        <Controller
-          name="capacity"
-          control={control}
-          render={({ field }) => (
-            <TextField {...field} label="Capacity" fullWidth margin="normal" />
-          )}
-        />
-        <Controller
-          name="departureDate"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Departure Date"
-              type="datetime-local"
-              fullWidth
-              margin="normal"
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
-          )}
-        />
+        {error && (
+          <Typography color="error" marginBottom={2}>
+            {error}
+          </Typography>
+        )}
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <TextField
+            label="Code"
+            {...register("code", { required: true })}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Capacity"
+            type="number"
+            {...register("capacity", { required: true })}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Departure Date"
+            type="datetime-local"
+            {...register("departureDate", { required: true })}
+            fullWidth
+            margin="normal"
+            InputLabelProps={{
+              shrink: true,
+            }}
+          />
+          <DialogActions>
+            <Button variant="contained" onClick={onClose} color="error">
+              Close
+            </Button>
+            <Button type="submit" variant="contained" color="primary">
+              Submit
+            </Button>
+          </DialogActions>
+        </form>
       </DialogContent>
-      <DialogActions>
-        <Button variant="contained" onClick={onClose} color="error">
-          Close
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleSubmit(handleFormSubmit)}
-          color="primary"
-        >
-          Submit
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };
