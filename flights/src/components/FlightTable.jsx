@@ -10,11 +10,27 @@ import {
   Typography,
   TablePagination,
   Button,
-  Box, // Import Button
+  Box,
+  IconButton,
+  Modal,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material";
+import ImageIcon from "@mui/icons-material/Image";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import { useLocation, useNavigate } from "react-router-dom";
-import { fetchFlights } from "../services/FlightService";
+import {
+  fetchFlights,
+  fetchFlightPhoto,
+  deleteFlight,
+  updateFlight,
+} from "../services/FlightService";
 import FlightModal from "./FlightForm";
+import EditFlightModal from "./EditFlightForm";
 
 const FlightsTable = () => {
   const location = useLocation();
@@ -25,7 +41,13 @@ const FlightsTable = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false); // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [flightToDelete, setFlightToDelete] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [flightToEdit, setFlightToEdit] = useState(null);
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -90,6 +112,73 @@ const FlightsTable = () => {
     setModalOpen(false);
   };
 
+  const handleOpenPreview = async (flightId) => {
+    try {
+      const photoURL = await fetchFlightPhoto(flightId);
+      if (photoURL) {
+        setSelectedImage(photoURL);
+      } else {
+        setSelectedImage(""); // No photo available
+      }
+      setPreviewOpen(true);
+    } catch (error) {
+      console.error("Failed to fetch flight photo:", error);
+      setSelectedImage(""); // No photo available
+      setPreviewOpen(true); // Still open the modal
+    }
+  };
+
+  const handleClosePreview = () => {
+    setPreviewOpen(false);
+    setSelectedImage("");
+  };
+
+  const handleOpenDeleteDialog = (flightId) => {
+    setFlightToDelete(flightId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setFlightToDelete(null);
+  };
+
+  const handleDeleteFlight = async () => {
+    if (flightToDelete) {
+      try {
+        await deleteFlight(flightToDelete);
+        setFlights(flights.filter((flight) => flight.id !== flightToDelete));
+        setTotalFlights(totalFlights - 1);
+      } catch (error) {
+        console.error("Failed to delete flight:", error);
+      } finally {
+        handleCloseDeleteDialog();
+      }
+    }
+  };
+
+  const handleOpenEditModal = (flight) => {
+    setFlightToEdit(flight);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setFlightToEdit(null);
+  };
+
+  const handleEditFlight = async (updatedFlight) => {
+    try {
+      const response = await updateFlight(updatedFlight.id, updatedFlight);
+      setFlights(
+        flights.map((flight) => (flight.id === response.id ? response : flight))
+      );
+      handleCloseEditModal();
+    } catch (error) {
+      console.error("Failed to update flight:", error);
+    }
+  };
+
   if (loading) {
     return <Typography>Loading flights...</Typography>;
   }
@@ -108,6 +197,12 @@ const FlightsTable = () => {
         </Button>
       </Box>
       <FlightModal open={modalOpen} onClose={handleCloseModal} />
+      <EditFlightModal
+        open={editModalOpen}
+        onClose={handleCloseEditModal}
+        flight={flightToEdit}
+        onSave={handleEditFlight}
+      />
       <TableContainer>
         <Table>
           <TableHead>
@@ -115,6 +210,8 @@ const FlightsTable = () => {
               <TableCell>Code</TableCell>
               <TableCell>Capacity</TableCell>
               <TableCell>Departure Date</TableCell>
+              <TableCell>Photo</TableCell>
+              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -126,11 +223,34 @@ const FlightsTable = () => {
                   <TableCell>
                     {new Date(flight.departureDate).toLocaleString()}
                   </TableCell>
+                  <TableCell>
+                    {flight.id ? (
+                      <IconButton onClick={() => handleOpenPreview(flight.id)}>
+                        <ImageIcon />
+                      </IconButton>
+                    ) : (
+                      "No photo"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleOpenEditModal(flight)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleOpenDeleteDialog(flight.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3}>No flights available.</TableCell>
+                <TableCell colSpan={6}>No flights available.</TableCell>
               </TableRow>
             )}
           </TableBody>
@@ -144,6 +264,53 @@ const FlightsTable = () => {
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleRowsPerPageChange}
       />
+
+      {/* Preview Modal */}
+      <Modal open={previewOpen} onClose={handleClosePreview}>
+        <Box
+          position="fixed"
+          left="20%"
+          transform="translate(-50%, -50%)"
+          bgcolor="background.paper"
+          boxShadow={24}
+          p={4}
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          width="80%" // Adjust the width as needed
+          maxWidth="800px" // Max width for larger screens
+          maxHeight="80vh" // Limit the height of the modal
+          overflow="auto" // Enable scroll if content exceeds max height
+        >
+          {selectedImage ? (
+            <img
+              src={selectedImage}
+              alt="Flight Preview"
+              style={{ width: "100%", maxHeight: "100%", objectFit: "contain" }}
+            />
+          ) : (
+            <Typography>No image available</Typography>
+          )}
+        </Box>
+      </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this flight?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteFlight} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };
