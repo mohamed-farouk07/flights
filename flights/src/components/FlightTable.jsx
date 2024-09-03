@@ -12,12 +12,16 @@ import {
   Button,
   Box,
   IconButton,
-  Modal,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  TextField,
+  Card,
+  CardContent,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import ImageIcon from "@mui/icons-material/Image";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -35,6 +39,8 @@ import EditFlightModal from "./EditFlightForm";
 const FlightsTable = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md")); // Check if the screen size is mobile
 
   const [flights, setFlights] = useState([]);
   const [totalFlights, setTotalFlights] = useState(0);
@@ -48,11 +54,15 @@ const FlightsTable = () => {
   const [flightToDelete, setFlightToDelete] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [flightToEdit, setFlightToEdit] = useState(null);
+  const [searchCode, setSearchCode] = useState(""); // State for search code
+  const [searchError, setSearchError] = useState(""); // State for search error
 
   useEffect(() => {
+    // Parse URL search parameters
     const queryParams = new URLSearchParams(location.search);
     const pageParam = parseInt(queryParams.get("page"), 10);
     const sizeParam = parseInt(queryParams.get("size"), 10);
+    const codeParam = queryParams.get("code") || ""; // Get code from query params
 
     const defaultPage =
       !isNaN(pageParam) && pageParam > 0 && pageParam <= 100
@@ -63,45 +73,55 @@ const FlightsTable = () => {
 
     setPage(defaultPage);
     setRowsPerPage(defaultSize);
-
-    if (defaultPage !== pageParam - 1 || defaultSize !== sizeParam) {
-      navigate({ search: `?page=${defaultPage + 1}&size=${defaultSize}` });
-    }
-  }, [location.search, navigate]);
+    setSearchCode(codeParam); // Set search code from query params
+  }, [location.search]);
 
   useEffect(() => {
     const loadFlights = async () => {
       setLoading(true);
       try {
-        const flightData = await fetchFlights(page + 1, rowsPerPage);
+        // Fetch flights with search code
+        const flightData = await fetchFlights(
+          page + 1,
+          rowsPerPage,
+          searchCode
+        );
         setFlights(flightData.resources);
         setTotalFlights(flightData.total);
+        setSearchError(""); // Clear any previous search error
       } catch (error) {
         console.error("Failed to load flights:", error);
+        setSearchError("Search to show flights(Abc). Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
     loadFlights();
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, searchCode]);
+
+  const updateURL = (page, size, code) => {
+    navigate({
+      search: `?page=${page + 1}&size=${size}&code=${code}`,
+    });
+  };
 
   const handlePageChange = (event, newPage) => {
     setPage(newPage);
-    updateURL(newPage, rowsPerPage);
+    updateURL(newPage, rowsPerPage, searchCode);
   };
 
   const handleRowsPerPageChange = (event) => {
     const newSize = parseInt(event.target.value, 10);
     setRowsPerPage(newSize);
     setPage(0);
-    updateURL(0, newSize);
+    updateURL(0, newSize, searchCode);
   };
 
-  const updateURL = (page, size) => {
-    navigate({
-      search: `?page=${page + 1}&size=${size}`,
-    });
+  const handleSearchChange = (event) => {
+    const newCode = event.target.value;
+    setSearchCode(newCode);
+    updateURL(page, rowsPerPage, newCode);
   };
 
   const handleOpenModal = () => {
@@ -115,11 +135,7 @@ const FlightsTable = () => {
   const handleOpenPreview = async (flightId) => {
     try {
       const photoURL = await fetchFlightPhoto(flightId);
-      if (photoURL) {
-        setSelectedImage(photoURL);
-      } else {
-        setSelectedImage(""); // No photo available
-      }
+      setSelectedImage(photoURL || ""); // Set photo URL or empty string
       setPreviewOpen(true);
     } catch (error) {
       console.error("Failed to fetch flight photo:", error);
@@ -185,132 +201,210 @@ const FlightsTable = () => {
 
   return (
     <Paper>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        padding="16px"
-      >
-        <Typography variant="h4">Flight Information</Typography>
-        <Button variant="contained" color="primary" onClick={handleOpenModal}>
-          Add Flight
-        </Button>
-      </Box>
-      <FlightModal open={modalOpen} onClose={handleCloseModal} />
-      <EditFlightModal
-        open={editModalOpen}
-        onClose={handleCloseEditModal}
-        flight={flightToEdit}
-        onSave={handleEditFlight}
-      />
-      <TableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Code</TableCell>
-              <TableCell>Capacity</TableCell>
-              <TableCell>Departure Date</TableCell>
-              <TableCell>Photo</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {flights.length > 0 ? (
-              flights.map((flight) => (
-                <TableRow key={flight.id}>
-                  <TableCell>{flight.code}</TableCell>
-                  <TableCell>{flight.capacity}</TableCell>
-                  <TableCell>
-                    {new Date(flight.departureDate).toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    {flight.id ? (
-                      <IconButton onClick={() => handleOpenPreview(flight.id)}>
-                        <ImageIcon />
-                      </IconButton>
-                    ) : (
-                      "No photo"
-                    )}
-                  </TableCell>
-                  <TableCell>
+      <Box display="flex" flexDirection="column" padding="16px">
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={2}
+        >
+          <Typography variant="h4">Flight Information</Typography>
+          <Button variant="contained" color="primary" onClick={handleOpenModal}>
+            Add Flight
+          </Button>
+        </Box>
+        <TextField
+          label="Search by Code"
+          variant="outlined"
+          fullWidth
+          value={searchCode}
+          onChange={handleSearchChange}
+          margin="normal"
+        />
+        <FlightModal open={modalOpen} onClose={handleCloseModal} />
+        <EditFlightModal
+          open={editModalOpen}
+          onClose={handleCloseEditModal}
+          flight={flightToEdit}
+          onSave={handleEditFlight}
+        />
+        {isMobile ? (
+          // Card view for mobile
+          <Paper>
+            {/* ... other components */}
+            <Box
+              display="flex"
+              flexWrap="wrap"
+              gap={2}
+              justifyContent="center" // Centering the cards horizontally
+              padding={2}
+            >
+              {flights.map((flight) => (
+                <Card
+                  key={flight.id}
+                  style={{
+                    maxWidth: 345,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <CardContent style={{ flex: 1 }}>
+                    <Box
+                      display="flex"
+                      flexDirection="column"
+                      alignItems="center"
+                      justifyContent="center"
+                      padding={1}
+                    >
+                      <Box textAlign="center" mb={2}>
+                        {/* Centering text inside the box */}
+                        <Typography variant="h6">{flight.code}</Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          Capacity: {flight.capacity}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          Departure Date: {flight.departureDate}
+                        </Typography>
+                      </Box>
+                      {/* Move image icon or "No Image" text to the bottom */}
+                      <Box
+                        display="flex"
+                        flexDirection="row"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        {flight.img ? (
+                          <IconButton
+                            onClick={() => handleOpenPreview(flight.id)}
+                            style={{ marginRight: 8 }}
+                          >
+                            <ImageIcon />
+                          </IconButton>
+                        ) : (
+                          <Typography>No Image</Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  </CardContent>
+                  <Box
+                    display="flex"
+                    justifyContent="center" // Centering buttons horizontally
+                    padding={1}
+                    style={{ borderTop: "1px solid #e0e0e0" }} // Optional: border on top of the buttons section
+                  >
                     <IconButton
-                      color="primary"
                       onClick={() => handleOpenEditModal(flight)}
+                      color="primary"
+                      style={{ marginRight: 8 }} // Adding space between buttons
                     >
                       <EditIcon />
                     </IconButton>
                     <IconButton
-                      color="error"
                       onClick={() => handleOpenDeleteDialog(flight.id)}
+                      color="error"
                     >
                       <DeleteIcon />
                     </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6}>No flights available.</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <TablePagination
-        component="div"
-        count={totalFlights}
-        page={page}
-        onPageChange={handlePageChange}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={handleRowsPerPageChange}
-      />
-
-      {/* Preview Modal */}
-      <Modal open={previewOpen} onClose={handleClosePreview}>
-        <Box
-          position="fixed"
-          left="20%"
-          transform="translate(-50%, -50%)"
-          bgcolor="background.paper"
-          boxShadow={24}
-          p={4}
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          width="80%" // Adjust the width as needed
-          maxWidth="800px" // Max width for larger screens
-          maxHeight="80vh" // Limit the height of the modal
-          overflow="auto" // Enable scroll if content exceeds max height
-        >
-          {selectedImage ? (
-            <img
-              src={selectedImage}
-              alt="Flight Preview"
-              style={{ width: "100%", maxHeight: "100%", objectFit: "contain" }}
+                  </Box>
+                </Card>
+              ))}
+            </Box>
+          </Paper>
+        ) : (
+          // Table view for larger screens
+          <>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Code</TableCell>
+                    <TableCell>Capacity</TableCell>
+                    <TableCell>Departure Date</TableCell>
+                    <TableCell>Photo</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {flights.map((flight) => (
+                    <TableRow key={flight.id}>
+                      <TableCell>{flight.code}</TableCell>
+                      <TableCell>{flight.capacity}</TableCell>
+                      <TableCell>{flight.departureDate}</TableCell>
+                      <TableCell>
+                        {flight.img ? (
+                          <IconButton
+                            onClick={() => handleOpenPreview(flight.id)}
+                          >
+                            <ImageIcon />
+                          </IconButton>
+                        ) : (
+                          <Typography>No Image</Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          onClick={() => handleOpenEditModal(flight)}
+                          color="primary"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          onClick={() => handleOpenDeleteDialog(flight.id)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={[10, 25, 50]}
+              component="div"
+              count={totalFlights}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handlePageChange}
+              onRowsPerPageChange={handleRowsPerPageChange}
             />
-          ) : (
-            <Typography>No image available</Typography>
-          )}
-        </Box>
-      </Modal>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
-        <DialogTitle>Confirm Deletion</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this flight?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteDialog} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleDeleteFlight} color="error">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </>
+        )}
+        <Dialog
+          open={previewOpen}
+          onClose={handleClosePreview}
+          fullWidth
+          maxWidth="sm"
+        >
+          <DialogTitle>Flight Image</DialogTitle>
+          <DialogContent>
+            {selectedImage ? (
+              <img src={selectedImage} alt="Flight" style={{ width: "100%" }} />
+            ) : (
+              <Typography>No image available</Typography>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClosePreview}>Close</Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
+          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete this flight?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
+            <Button onClick={handleDeleteFlight} color="secondary">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+        {searchError && <Typography color="error">{searchError}</Typography>}
+      </Box>
     </Paper>
   );
 };

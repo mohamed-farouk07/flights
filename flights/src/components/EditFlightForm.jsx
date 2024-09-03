@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import {
   Dialog,
   DialogActions,
@@ -6,10 +6,9 @@ import {
   DialogTitle,
   Button,
   TextField,
-  Input,
 } from "@mui/material";
 import { useForm } from "react-hook-form";
-import { updateFlight } from "../services/FlightService"; // Ensure this is the correct path
+import { updateFlight } from "../services/FlightService";
 
 const EditFlightForm = ({ open, onClose, flight, onSave }) => {
   const {
@@ -19,43 +18,34 @@ const EditFlightForm = ({ open, onClose, flight, onSave }) => {
     formState: { errors },
   } = useForm();
 
-  const [file, setFile] = useState(null);
-
   useEffect(() => {
     if (flight) {
       setValue("code", flight.code);
       setValue("capacity", flight.capacity);
       setValue("departureDate", flight.departureDate);
-      // Reset the file input when flight changes
-      setFile(null);
     }
   }, [flight, setValue]);
-
-  const handleFileChange = (event) => {
-    setFile(event.target.files[0]);
-  };
 
   const onSubmit = async (data) => {
     if (flight) {
       try {
-        // Prepare form data
-        const formData = new FormData();
-        formData.append("code", data.code);
-        formData.append("capacity", data.capacity);
-        formData.append("departureDate", data.departureDate);
-        if (file) {
-          formData.append("photo", file); // Append the photo file if provided
-        }
+        // Prepare the flight data without a photo
+        const flightData = {
+          code: data.code,
+          capacity: parseInt(data.capacity, 10),
+          departureDate: data.departureDate,
+        };
 
-        // Log FormData for debugging
-        for (let pair of formData.entries()) {
-          console.log(`${pair[0]}: ${pair[1]}`);
-        }
-
-        const updatedFlight = await updateFlight(flight.id, formData); // Update the flight with the form data
+        const updatedFlight = await updateFlight(flight.id, flightData); // Update the flight with the form data
         onSave(updatedFlight); // Call the onSave callback with the updated flight
+        onClose(); // Close the modal
+        window.location.reload(); // Refresh the page to update the table
       } catch (error) {
-        console.error("Failed to update flight:", error);
+        console.error("Failed to update flight:", error.response?.data || error.message);
+        // Optionally, you can display the error message in the UI
+        alert("Failed to update flight. Please try again.");
+        onClose(); // Close the modal
+        window.location.reload(); // Refresh the page to handle the error state
       }
     }
   };
@@ -86,7 +76,7 @@ const EditFlightForm = ({ open, onClose, flight, onSave }) => {
             label="Departure Date"
             fullWidth
             margin="normal"
-            type="datetime-local"
+            type="date"
             {...register("departureDate", {
               required: "Departure Date is required",
             })}

@@ -7,13 +7,16 @@ const API_BASE_URL = 'http://localhost:3000';
 /**
  * @param {number} page
  * @param {number} size
+ * @param {string} [code]
  * @returns {Promise<Object>}
  */
-export const fetchFlights = async (page = 1, size = 10) => {
+export const fetchFlights = async (page = 1, size = 10, code = '') => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/flights`, {
-            params: { page, size },
-        });
+        const params = { page, size };
+        if (code) {
+            params.code = code;
+        }
+        const response = await axios.get(`${API_BASE_URL}/flights`, { params });
         return response.data;
     } catch (error) {
         console.error('Error fetching flights:', error);
@@ -64,10 +67,14 @@ export const deleteFlight = async (flightId) => {
  */
 export const updateFlight = async (flightId, flightData) => {
     try {
-        const response = await axios.put(`${API_BASE_URL}/flights/${flightId}`, flightData);
+        const response = await axios.put(`${API_BASE_URL}/flights/${flightId}`, flightData, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
         return response.data;
     } catch (error) {
-        console.error("Error updating flight:", error);
+        console.error("Error updating flight:", error.response?.data || error.message);
         throw error;
     }
 };
