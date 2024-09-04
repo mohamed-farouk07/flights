@@ -3,7 +3,6 @@ import axios from 'axios';
 const API_BASE_URL = 'http://localhost:3000';
 
 /**
- * Registers a new user.
  * @param {Object} userData - The data for the new user
  * @param {string} userData.name - The name of the user
  * @param {string} userData.email - The email of the user

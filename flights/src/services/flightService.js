@@ -1,5 +1,3 @@
-// services/FlightService.js
-
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:3000';
@@ -39,7 +37,7 @@ export const fetchFlightPhoto = async (id) => {
             const photoURL = URL.createObjectURL(response.data);
             return photoURL;
         } else {
-            return null; // No photo available
+            return null;
         }
     } catch (error) {
         console.error("Error fetching flight photo:", error);
@@ -62,8 +60,8 @@ export const deleteFlight = async (flightId) => {
 
 /**
  * @param {string} flightId
- * @param {Object} flightData - The data to update the flight with
- * @returns {Promise<Object>} - The updated flight
+ * @param {Object} flightData
+ * @returns {Promise<Object>}
  */
 export const updateFlight = async (flightId, flightData) => {
     try {

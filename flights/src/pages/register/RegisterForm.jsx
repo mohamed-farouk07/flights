@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button, TextField, Typography, Paper, Box } from "@mui/material";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle"; // Example icon
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { registerUser } from "../../services/RegisterService";
 
 const RegisterForm = () => {

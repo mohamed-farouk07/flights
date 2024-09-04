@@ -4,7 +4,7 @@ const API_BASE_URL = 'http://localhost:3000';
 
 /**
  * Fetches the current logged-in user
- * @returns {Promise<Object>} - The current user data
+ * @returns {Promise<Object>}
  */
 export const fetchCurrentUser = async () => {
   try {

@@ -36,16 +36,15 @@ const EditFlightForm = ({ open, onClose, flight, onSave }) => {
           departureDate: data.departureDate,
         };
 
-        const updatedFlight = await updateFlight(flight.id, flightData); // Update the flight with the form data
-        onSave(updatedFlight); // Call the onSave callback with the updated flight
-        onClose(); // Close the modal
-        window.location.reload(); // Refresh the page to update the table
+        const updatedFlight = await updateFlight(flight.id, flightData);
+        onSave(updatedFlight);
+        onClose();
+        window.location.reload();
       } catch (error) {
         console.error("Failed to update flight:", error.response?.data || error.message);
-        // Optionally, you can display the error message in the UI
         alert("Failed to update flight. Please try again.");
-        onClose(); // Close the modal
-        window.location.reload(); // Refresh the page to handle the error state
+        onClose();
+        window.location.reload();
       }
     }
   };

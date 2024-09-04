@@ -22,7 +22,7 @@ const Navbar = () => {
       } catch (err) {
         console.error('Error fetching user:', err);
         localStorage.removeItem('token'); // Clear token if an error occurs
-        navigate('/login'); // Redirect to login
+        navigate('/login');
       } finally {
         setLoading(false);
       }

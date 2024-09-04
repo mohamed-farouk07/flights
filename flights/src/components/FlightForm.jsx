@@ -17,19 +17,17 @@ const FlightModal = ({ open, onClose }) => {
   const [photoPreview, setPhotoPreview] = useState(null); // State to store the preview URL
 
   const onSubmit = async (data) => {
-    setError(null); // Reset any previous errors
-
-    // Validate the image file before submission
+    setError(null);
     if (data.img && data.img.length > 0) {
       const file = data.img[0];
 
-      // Example: Limit file size to 2MB
+      // Limit file size to 2MB
       if (file.size > 2 * 1024 * 1024) {
         setError("File size should not exceed 2MB");
         return;
       }
 
-      // Example: Validate file type
+      // Validate file type
       const validImageTypes = ["image/jpeg", "image/png", "image/gif", "image/jpg"];
       if (!validImageTypes.includes(file.type)) {
         setError(
@@ -56,10 +54,8 @@ const FlightModal = ({ open, onClose }) => {
       }
 
       await createFlight(flightData, withPhoto);
-      reset(); // Reset form after successful submission
-      onClose(); // Close the modal
-
-      // Refresh the page
+      reset();
+      onClose();
       window.location.reload();
     } catch (error) {
       setError(error.message); // Set the error message to display
@@ -70,10 +66,10 @@ const FlightModal = ({ open, onClose }) => {
   const handlePhotoChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const url = URL.createObjectURL(file); // Create a preview URL
-      setPhotoPreview(url); // Update the state with the preview URL
+      const url = URL.createObjectURL(file);
+      setPhotoPreview(url);
     } else {
-      setPhotoPreview(null); // Reset preview if no file is selected
+      setPhotoPreview(null);
     }
   };
 
@@ -87,10 +83,10 @@ const FlightModal = ({ open, onClose }) => {
       }}
       PaperProps={{
         style: {
-          width: "80vw", // Full width of the viewport
-          height: "80vh", // Full height of the viewport
-          maxWidth: "none", // Remove max-width to ensure full width
-          maxHeight: "none", // Remove max-height to ensure full height
+          width: "80vw",
+          height: "80vh",
+          maxWidth: "none",
+          maxHeight: "none",
         },
       }}
       disableEscapeKeyDown
@@ -132,14 +128,13 @@ const FlightModal = ({ open, onClose }) => {
             {...register("img")}
             fullWidth
             margin="normal"
-            inputProps={{ accept: "image/*" }} // Only accept image files
-            onChange={handlePhotoChange} // Handle file selection
+            inputProps={{ accept: "image/*" }}
+            onChange={handlePhotoChange}
             InputLabelProps={{
               shrink: true,
             }}
           />
 
-          {/* Display image preview if a photo is selected */}
           {photoPreview && (
             <div style={{ marginTop: "16px" }}>
               <Typography variant="body1">Photo Preview:</Typography>

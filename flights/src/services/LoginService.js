@@ -1,11 +1,8 @@
-// src/services/LoginService.js
-
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:3000';
 
 /**
- * Logs in a user with email and password.
  * @param {Object} credentials - User credentials.
  * @param {string} credentials.email - User's email.
  * @param {string} credentials.password - User's password.

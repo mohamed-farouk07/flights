@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { refreshToken } from './services/RefreshService'; // Import refreshToken
 
 const API_BASE_URL = 'http://localhost:3000';
 
@@ -30,7 +29,7 @@ api.interceptors.response.use(response => response, async error => {
                 config.headers.Authorization = `Bearer ${token}`;
                 return api(config);
             } catch (err) {
-                // Handle token refresh failure (e.g., redirect to login)
+                // Handle token refresh failure and redirect to login
                 localStorage.removeItem('token');
                 localStorage.removeItem('refreshToken');
                 window.location.href = '/login';

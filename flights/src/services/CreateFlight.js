@@ -1,12 +1,12 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000'; // Adjust this if your server is running on a different port
+const API_BASE_URL = 'http://localhost:3000';
 
 /**
  * Create a new flight.
- * @param {FormData} flightData - The data for the new flight.
- * @param {boolean} hasPhoto - Whether the flight data includes a photo.
- * @returns {Promise<Object>} - The newly created flight object or an error message.
+ * @param {FormData} flightData - The data for the new flight
+ * @param {boolean} hasPhoto - Whether the flight data includes a photo
+ * @returns {Promise<Object>} - created flight object
  */
 export const createFlight = async (flightData, hasPhoto) => {
     try {

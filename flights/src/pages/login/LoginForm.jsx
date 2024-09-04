@@ -20,9 +20,9 @@ const LoginForm = () => {
       const result = await loginUser(data);
       setSuccess(`Login successful! Welcome back, ${result.name}.`);
       setError("");
-      localStorage.setItem("token", result.token); // Store token in local storage
-      localStorage.setItem("user", JSON.stringify(result)); // Store user data in local storage
-      navigate("/"); // Redirect to the main page
+      localStorage.setItem("token", result.token);
+      localStorage.setItem("user", JSON.stringify(result));
+      navigate("/");
     } catch (err) {
       setSuccess("");
       const errorMessage =
