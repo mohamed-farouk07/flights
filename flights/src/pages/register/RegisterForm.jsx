@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button, TextField, Typography, Paper, Box } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import { Link } from "react-router-dom"; // Import Link
 import { registerUser } from "../../services/RegisterService";
 
 const RegisterForm = () => {
@@ -92,6 +93,17 @@ const RegisterForm = () => {
           <Button variant="contained" color="primary" type="submit">
             Register
           </Button>
+          <Box marginTop={2}>
+            <Typography>
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                style={{ textDecoration: "none", color: "#3f51b5" }}
+              >
+                Login here
+              </Link>
+            </Typography>
+          </Box>
         </form>
       </Paper>
     </Box>

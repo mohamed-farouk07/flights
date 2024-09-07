@@ -2,7 +2,7 @@ import React from "react";
 import { Button, TextField, Typography, Paper, Box } from "@mui/material";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../../services/LoginService";
 
 const LoginForm = () => {
@@ -101,7 +101,18 @@ const LoginForm = () => {
           )}
           <Button variant="contained" color="primary" type="submit">
             Login
-          </Button>
+          </Button>{" "}
+          <Box marginTop={2}>
+            <Typography>
+              Don't have an account?{" "}
+              <Link
+                to="/register"
+                style={{ textDecoration: "none", color: "#3f51b5" }}
+              >
+                Register here
+              </Link>
+            </Typography>
+          </Box>
         </form>
       </Paper>
     </Box>
